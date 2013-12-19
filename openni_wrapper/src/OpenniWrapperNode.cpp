@@ -1,6 +1,7 @@
 #include "OpenniWrapperNode.h"
 
 #include <sstream>
+#include <fstream>
 
 using namespace openni;
 using namespace std;
@@ -74,11 +75,11 @@ OpenniWrapperNode::OpenniWrapperNode(ros::NodeHandle nh, ros::NodeHandle private
     for (size_t i=0; i<m_DevicesDefined;i++)
     {
         cout<<m_vCameraNamespace[i]<<endl;
-        ColorCallback* colorCB = new ColorCallback(nh, m_vCameraNamespace[i], true, false);
-        DepthCallback* depthCB = new DepthCallback(nh, m_vCameraNamespace[i], true, false);
+//        ColorCallback* colorCB = new ColorCallback(nh, m_vCameraNamespace[i], true, false);
+//        DepthCallback* depthCB = new DepthCallback(nh, m_vCameraNamespace[i], true, false);
 
-        m_vDepthCallback.push_back(depthCB);
-        m_vColorCallback.push_back(colorCB);
+//        m_vDepthCallback.push_back(depthCB);
+//        m_vColorCallback.push_back(colorCB);
     }
 
 
@@ -189,14 +190,67 @@ void OpenniWrapperNode::initializeOpenni()
             printf("Couldn't start the depth stream\n%s\n", OpenNI::getExtendedError());
         }
 
+
+        char serialNumber[100];
+        m_vDevice[i]->getProperty(ONI_DEVICE_PROPERTY_SERIAL_NUMBER,&serialNumber);
+        std::cout<<"Device serial number "<<serialNumber<<std::endl;
+        // check if a calibration file exists
+        std::string home=getenv("HOME");
+        std::string calibrationFileDepth = home+"/.ros/camera_info/depth_"+serialNumber+".yaml";
+        std::string calibrationFileRGB = home+"/.ros/camera_info/rgb_"+serialNumber+".yaml";
+
+        ifstream idepthfile(calibrationFileDepth.c_str());
+        if (!idepthfile)
+        {
+            calibrationFileDepth = "";
+        }
+        idepthfile.close();
+
+        ifstream irgbfile(calibrationFileRGB.c_str());
+        if (!irgbfile)
+        {
+            calibrationFileRGB = "";
+        }
+        irgbfile.close();
+
+        cout<<"RGB calib "<<calibrationFileRGB<<endl;
+        cout<<"Depth calib "<<calibrationFileDepth<<endl;
+
+        ColorCallback* colorCB = new ColorCallback(m_nodeHandle, m_vCameraNamespace[i], true, false,calibrationFileRGB);
+        DepthCallback* depthCB = new DepthCallback(m_nodeHandle, m_vCameraNamespace[i], true, false,calibrationFileDepth);
+
+        m_vDepthCallback.push_back(depthCB);
+        m_vColorCallback.push_back(colorCB);
+
         if (m_vDevice[i]->getSensorInfo(SENSOR_COLOR) != NULL)
         {
-            m_vColor[i] = new VideoStream;
+            m_vColor[i] = new VideoStream;          
+
             rc = m_vColor[i]->create(*m_vDevice[i], SENSOR_COLOR);
             if (rc != STATUS_OK)
             {
                 printf("Couldn't create color stream\n%s\n", OpenNI::getExtendedError());
             }
+
+            CameraSettings* streamSettings = m_vColor[i]->getCameraSettings();
+
+            if (streamSettings->getAutoExposureEnabled())
+            {
+                std::cout<<"Stream has auto exposure enabled"<<std::endl;
+            } else {
+                std::cout<<"Stream doesn't have auto exposure enabled"<<std::endl;
+            }
+
+            if (streamSettings->getAutoWhiteBalanceEnabled())
+            {
+                std::cout<<"Stream has white balancing enabled"<<std::endl;
+            } else {
+                std::cout<<"Stream doesn't have white balancing enabled"<<std::endl;
+            }
+
+//            streamSettings->setAutoExposureEnabled(false);
+//            streamSettings->setGain(15000);
+//            streamSettings->setAutoWhiteBalanceEnabled(false);
         }
         VideoMode colorVideoMode = m_vColor[i]->getVideoMode();
         colorVideoMode.setResolution(640,480);

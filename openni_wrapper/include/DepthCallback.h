@@ -3,12 +3,14 @@
 
 #include <stdio.h>
 #include "OpenNI.h"
- #include "ros/ros.h"
+#include "ros/ros.h"
+
+#include "sensor_msgs/CameraInfo.h"
 
 class DepthCallback : public openni::VideoStream::NewFrameListener
 {
 public:
-    DepthCallback(ros::NodeHandle aRosNode, std::string camNamespace="camera", bool publishRosMessage = true, bool createCVwin = false);
+    DepthCallback(ros::NodeHandle aRosNode, std::string camNamespace="camera", bool publishRosMessage = true, bool createCVwin = false, std::string calibrationFile="");
     void onNewFrame(openni::VideoStream& stream);
     void analyzeFrame(const openni::VideoFrameRef& frame);
     bool        saveOneFrame, saveFrameSequence, publishRosMessage, createCVWindow;
@@ -18,6 +20,8 @@ private:
     ros::NodeHandle       m_RosNode;
     ros::Publisher        m_RosPublisher;
     ros::Publisher        m_RosCameraInfoPublisher;
+
+    sensor_msgs::CameraInfo     m_CamInfo;
 
 };
 

@@ -9,12 +9,13 @@
 
 #include "DepthCallback.h"
 
+#include "sensor_msgs/CameraInfo.h"
 
 
 class ColorCallback : public openni::VideoStream::NewFrameListener
 {
 public:
-    ColorCallback(ros::NodeHandle aRosNode, std::string camNamespace="camera", bool publishRosMessage = true, bool createCVwin = false);
+    ColorCallback(ros::NodeHandle aRosNode, std::string camNamespace="camera", bool publishRosMessage = true, bool createCVwin = false, std::string calibrationFile="");
     void onNewFrame(openni::VideoStream& stream);
     void analyzeFrame(const openni::VideoFrameRef& frame);
     bool        saveOneFrame, saveFrameSequence,publishRosMessage, createCVWindow;
@@ -26,6 +27,8 @@ private:
     ros::Publisher        m_RosCameraInfoPublisher;
     std::string           m_rgbTopic;
     std::string           m_rgbInfoTopic;
+
+    sensor_msgs::CameraInfo     m_CamInfo;
 
 
 };

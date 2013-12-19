@@ -6,6 +6,8 @@
 
 #include <stdlib.h>
 #include <iostream>
+#include <fstream>
+#include <camera_calibration_parsers/parse.h>
 
 #include <cv_bridge/cv_bridge.h>
 
@@ -16,7 +18,7 @@ using namespace openni;
 using namespace cv;
 using namespace std;
 
-DepthCallback::DepthCallback(ros::NodeHandle aRosNode, std::string camNamespace, bool publish_in_ros, bool createCVwin) : publishRosMessage(publish_in_ros), createCVWindow(createCVwin)
+DepthCallback::DepthCallback(ros::NodeHandle aRosNode, std::string camNamespace, bool publish_in_ros, bool createCVwin, std::string calibrationFile) : publishRosMessage(publish_in_ros), createCVWindow(createCVwin)
 {
     if (createCVWindow)
     {
@@ -34,6 +36,24 @@ DepthCallback::DepthCallback(ros::NodeHandle aRosNode, std::string camNamespace,
 
     saveOneFrame = false;
     saveFrameSequence = false;
+
+    std::ifstream calibrationFileStream(calibrationFile.c_str());
+    if (!calibrationFileStream)
+    {
+        m_CamInfo.distortion_model = "plumb_bob";
+        m_CamInfo.K = {{570.3422241210938, 0.0, 314.5, 0.0, 570.3422241210938, 235.5, 0.0, 0.0, 1.0}};
+        m_CamInfo.R = {{1.0, 0.0, 0.0, 0.0, 1.0, 0.0, 0.0, 0.0, 1.0}};
+        m_CamInfo.P = {{570.3422241210938, 0.0, 314.5, 0.0, 0.0, 570.3422241210938, 235.5, 0.0, 0.0, 0.0, 1.0, 0.0}};
+        double D[5] = {0.0,0.0,0.0,0.0,0.0};
+        m_CamInfo.D.assign(&D[0], &D[0]+5);
+    } else {
+        // calibration file exists -> load it
+        calibrationFileStream.close();
+        string cameraName;
+        camera_calibration_parsers::readCalibration(calibrationFile,cameraName,m_CamInfo);
+    }
+
+    std::cout<<"Camera calibration info "<<m_CamInfo<<std::endl;
 
 
 }
@@ -84,18 +104,12 @@ void DepthCallback::analyzeFrame(const VideoFrameRef& frame)
         rosImage.get()->header.stamp = ros::Time::now();
         m_RosPublisher.publish(rosImage);
 
-        sensor_msgs::CameraInfo camInfo;
-        camInfo.width = frame.getWidth();
-        camInfo.height = frame.getHeight();
-        camInfo.distortion_model = "plumb_bob";
-        camInfo.K = {{570.3422241210938, 0.0, 314.5, 0.0, 570.3422241210938, 235.5, 0.0, 0.0, 1.0}};
-        camInfo.R = {{1.0, 0.0, 0.0, 0.0, 1.0, 0.0, 0.0, 0.0, 1.0}};
-        camInfo.P = {{570.3422241210938, 0.0, 314.5, 0.0, 0.0, 570.3422241210938, 235.5, 0.0, 0.0, 0.0, 1.0, 0.0}};
-        double D[5] = {0.0,0.0,0.0,0.0,0.0};
-        camInfo.D.assign(&D[0], &D[0]+5);
-        camInfo.header.frame_id = string("/") + string (m_CameraNamespace)+string("_depth_optical_frame");
-        camInfo.header.stamp = rosImage.get()->header.stamp;
-        m_RosCameraInfoPublisher.publish(camInfo);
+        // camera info
+        m_CamInfo.width = frame.getWidth();
+        m_CamInfo.height = frame.getHeight();
+        m_CamInfo.header.frame_id = string("/") + string (m_CameraNamespace)+string("_depth_optical_frame");
+        m_CamInfo.header.stamp = rosImage.get()->header.stamp;
+        m_RosCameraInfoPublisher.publish(m_CamInfo);
     }
 
 }
