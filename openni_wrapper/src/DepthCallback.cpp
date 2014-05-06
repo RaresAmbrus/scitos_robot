@@ -29,8 +29,10 @@ DepthCallback::DepthCallback(ros::NodeHandle aRosNode, std::string camNamespace,
 
     m_RosNode = aRosNode;
 
-    m_RosPublisher = m_RosNode.advertise<sensor_msgs::Image>(string("/") + string (m_CameraNamespace)+string("/")+"depth/image_raw", 1000);
-    m_RosPublisherLowFPS = m_RosNode.advertise<sensor_msgs::Image>(string("/") + string (m_CameraNamespace)+string("/")+"depth/image_raw_low_fps", 1000);
+    m_ImageTransport = boost::shared_ptr<image_transport::ImageTransport>(new image_transport::ImageTransport(m_RosNode));
+    m_RosPublisher = m_ImageTransport->advertise(string("/") + string (m_CameraNamespace)+string("/")+"depth/image_raw", 1000);
+    m_RosPublisherLowFPS = m_ImageTransport->advertise(string("/") + string (m_CameraNamespace)+string("/")+"depth/image_raw_low_fps", 1000);
+
     m_RosCameraInfoPublisher = m_RosNode.advertise<sensor_msgs::CameraInfo>(string("/") + string (m_CameraNamespace)+string("/")+"depth/camera_info", 1000);
 
     saveOneFrame = false;

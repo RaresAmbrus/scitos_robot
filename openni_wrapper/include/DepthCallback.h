@@ -5,6 +5,8 @@
 #include "OpenNI.h"
  #include "ros/ros.h"
 
+#include <image_transport/subscriber_filter.h>
+
 class DepthCallback : public openni::VideoStream::NewFrameListener
 {
 public:
@@ -16,9 +18,10 @@ public:
 private:
     openni::VideoFrameRef m_frame;
     ros::NodeHandle       m_RosNode;
-    ros::Publisher        m_RosPublisher;
-    ros::Publisher        m_RosPublisherLowFPS;
-    ros::Publisher        m_RosCameraInfoPublisher;
+    boost::shared_ptr<image_transport::ImageTransport>                          m_ImageTransport;
+    image_transport::Publisher                                                  m_RosPublisher;
+    image_transport::Publisher                                                  m_RosPublisherLowFPS;
+    ros::Publisher                                                              m_RosCameraInfoPublisher;
 
 };
 

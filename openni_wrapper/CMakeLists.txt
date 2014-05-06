@@ -3,7 +3,7 @@ project(openni_wrapper)
 
 set(CMAKE_CXX_FLAGS "-g -fPIC -std=c++0x -fpermissive")
 
-find_package(catkin REQUIRED COMPONENTS roscpp rospy std_msgs cv_bridge nodelet class_loader)
+find_package(catkin REQUIRED COMPONENTS roscpp rospy std_msgs cv_bridge nodelet class_loader image_transport)
 find_package( OpenCV REQUIRED )
 find_package(cv_bridge REQUIRED)
 
