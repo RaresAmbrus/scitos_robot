@@ -17,6 +17,7 @@ private:
     openni::VideoFrameRef m_frame;
     ros::NodeHandle       m_RosNode;
     ros::Publisher        m_RosPublisher;
+    ros::Publisher        m_RosPublisherLowFPS;
     ros::Publisher        m_RosCameraInfoPublisher;
 
 };

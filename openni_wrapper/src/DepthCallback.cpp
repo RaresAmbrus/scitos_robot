@@ -30,6 +30,7 @@ DepthCallback::DepthCallback(ros::NodeHandle aRosNode, std::string camNamespace,
     m_RosNode = aRosNode;
 
     m_RosPublisher = m_RosNode.advertise<sensor_msgs::Image>(string("/") + string (m_CameraNamespace)+string("/")+"depth/image_raw", 1000);
+    m_RosPublisherLowFPS = m_RosNode.advertise<sensor_msgs::Image>(string("/") + string (m_CameraNamespace)+string("/")+"depth/image_raw_low_fps", 1000);
     m_RosCameraInfoPublisher = m_RosNode.advertise<sensor_msgs::CameraInfo>(string("/") + string (m_CameraNamespace)+string("/")+"depth/camera_info", 1000);
 
     saveOneFrame = false;
@@ -83,6 +84,17 @@ void DepthCallback::analyzeFrame(const VideoFrameRef& frame)
         rosImage.get()->encoding="16UC1";
         rosImage.get()->header.stamp = ros::Time::now();
         m_RosPublisher.publish(rosImage);
+
+        static int fps_counter = 0;
+
+        if (fps_counter == 15)
+        {
+            fps_counter = 0;
+            m_RosPublisherLowFPS.publish(rosImage);
+        } else {
+            fps_counter++;
+        }
+
 
         sensor_msgs::CameraInfo camInfo;
         camInfo.width = frame.getWidth();

@@ -23,6 +23,7 @@ private:
     openni::VideoFrameRef m_frame;
     ros::NodeHandle       m_RosNode;
     ros::Publisher        m_RosImagePublisher;
+    ros::Publisher        m_RosImagePublisherLowFPS;
     ros::Publisher        m_RosCameraInfoPublisher;
     std::string           m_rgbTopic;
     std::string           m_rgbInfoTopic;
